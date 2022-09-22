@@ -1,8 +1,8 @@
 import numpy as np
 
-def entropy(y):
-    hist = np.bincount(y)
-    ps = hist / len(y)
+def entropy( labels):
+    hist = np.bincount( labels)
+    ps = hist / len( labels)
     return -np.sum([p * np.log2(p) for p in ps if p > 0])
 
 class Node:
@@ -26,43 +26,43 @@ class DecisionTree:
         self.n_feats = n_feats
         self.root = None
 
-    def fit(self, X, y):
-        self.n_feats = X.shape[1] if not self.n_feats else min(self.n_feats, X.shape[1])
-        self.root = self._grow_tree(X, y)
+    def fit(self, samples, labels):
+        self.n_feats = samples.shape[1] if not self.n_feats else min(self.n_feats, samples.shape[1])
+        self.root = self._grow_tree(samples, labels)
 
-    def predict(self, X):
-        return np.array([self._traverse_tree(x, self.root) for x in X])
+    def predict(self, samples):
+        return np.array([self._traverse_tree(samples, self.root) for samples in samples])
 
-    def _grow_tree(self, X, y, depth=0):
-        n_samples, n_features = X.shape
-        n_labels = len(np.unique(y))
+    def _grow_tree(self, samples, labels, depth=0):
+        n_samples, n_features = samples.shape
+        n_labels = len(np.unique( labels))
 
         # stopping criteria
         if (depth >= self.max_depth
                 or n_labels == 1
                 or n_samples < self.min_samples_split):
-            leaf_value = self._most_common_label(y)
+            leaf_value = self._most_common_label( labels)
             return Node(value=leaf_value)
 
         feat_idxs = np.random.choice(n_features, self.n_feats, replace=False)
 
         # greedily select the best split according to information gain
-        best_feat, best_thresh = self._best_criteria(X, y, feat_idxs)
+        best_feat, best_thresh = self._best_criteria(samples, labels, feat_idxs)
 
         # grow the children that result from the split
-        left_idxs, right_idxs = self._split(X[:, best_feat], best_thresh)
-        left = self._grow_tree(X[left_idxs, :], y[left_idxs], depth + 1)
-        right = self._grow_tree(X[right_idxs, :], y[right_idxs], depth + 1)
+        left_idxs, right_idxs = self._split(samples[:, best_feat], best_thresh)
+        left = self._grow_tree(samples[left_idxs, :], labels[left_idxs], depth + 1)
+        right = self._grow_tree(samples[right_idxs, :], labels[right_idxs], depth + 1)
         return Node(best_feat, best_thresh, left, right)
 
-    def _best_criteria(self, X, y, feat_idxs):
+    def _best_criteria(self, samples, labels, feat_idxs):
         best_gain = -1
         split_idx, split_thresh = None, None
         for feat_idx in feat_idxs:
-            X_column = X[:, feat_idx]
-            thresholds = np.unique(X_column)
+            samples_column = samples[:, feat_idx]
+            thresholds = np.unique(samples_column)
             for threshold in thresholds:
-                gain = self._information_gain(y, X_column, threshold)
+                gain = self._information_gain( labels, samples_column, threshold)
 
                 if gain > best_gain:
                     best_gain = gain
@@ -71,50 +71,50 @@ class DecisionTree:
 
         return split_idx, split_thresh
 
-    def _information_gain(self, y, X_column, split_thresh):
+    def _information_gain(self, labels, samples_column, split_thresh):
         # parent loss
-        parent_entropy = entropy(y)
+        parent_entropy = entropy( labels)
 
         # generate split
-        left_idxs, right_idxs = self._split(X_column, split_thresh)
+        left_idxs, right_idxs = self._split(samples_column, split_thresh)
 
         if len(left_idxs) == 0 or len(right_idxs) == 0:
             return 0
 
         # compute the weighted avg. of the loss for the children
-        n = len(y)
+        n = len( labels)
         n_l, n_r = len(left_idxs), len(right_idxs)
-        e_l, e_r = entropy(y[left_idxs]), entropy(y[right_idxs])
+        e_l, e_r = entropy( labels[left_idxs]), entropy(labels[right_idxs])
         child_entropy = (n_l / n) * e_l + (n_r / n) * e_r
 
         # information gain is difference in loss before vs. after split
         ig = parent_entropy - child_entropy
         return ig
 
-    def _split(self, X_column, split_thresh):
-        left_idxs = np.argwhere(X_column <= split_thresh).flatten()
-        right_idxs = np.argwhere(X_column > split_thresh).flatten()
+    def _split(self, samples_column, split_thresh):
+        left_idxs = np.argwhere(samples_column <= split_thresh).flatten()
+        right_idxs = np.argwhere(samples_column > split_thresh).flatten()
         return left_idxs, right_idxs
 
-    def _traverse_tree(self, x, node):
+    def _traverse_tree(self, samples, node):
         if node.is_leaf_node():
             return node.value
 
-        if x[node.feature] <= node.threshold:
-            return self._traverse_tree(x, node.left)
-        return self._traverse_tree(x, node.right)
+        if samples[node.feature] <= node.threshold:
+            return self._traverse_tree(samples, node.left)
+        return self._traverse_tree(samples, node.right)
 
-    #     def _most_common_label(self, y):
-    #         counter = Counter(y)
+    #     def _most_common_label(self, labels):
+    #         counter = Counter(labels)
     #         most_common = counter.most_common(1)[0][0]
     #         return most_common
 
-    def _most_common_label(self, y):
+    def _most_common_label(self, labels):
         # counts = {"ones":[], "zeros":[]}
         zeros_count = 0
         ones_count = 0
-        for i in range(len(y)):
-            if y[i] == 0:
+        for i in range(len(labels)):
+            if labels[i] == 0:
                 zeros_count += 1
             else:
                 ones_count += 1
@@ -144,6 +144,6 @@ class DecisionTree:
             print("%s(no)  right:" % (indent), end="")
             self.print_tree(tree.right, indent + indent)
 
-def accuracy(y_true, y_pred):
-  accuracy = np.sum(y_true == y_pred)/len(y_true)
+def accuracy( labels_true, labels_pred):
+  accuracy = np.sum( labels_true == labels_pred)/len( labels_true)
   return accuracy
