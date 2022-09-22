@@ -1,7 +1,5 @@
-from collections import Counter
-
+#imports
 import numpy as np
-
 from binary_decision_tree import DecisionTree
 
 
@@ -11,8 +9,17 @@ def bootstrap_sample(samples, labels):
     return samples[idxs], labels[idxs]
 
 def most_common_label(labels):
-    counter = Counter(labels)
-    most_common = counter.most_common(1)[0][0]
+    zeros_count = 0
+    ones_count = 0
+    for i in range(len(labels)):
+        if labels[i] == 0:
+             zeros_count += 1
+        else:
+            ones_count += 1
+    if zeros_count > ones_count:
+        most_common = 0
+    else:
+        most_common = 1
     return most_common
 
 
