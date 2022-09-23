@@ -1,7 +1,8 @@
-from binary_decision_tree import DecisionTree
+from binary_decision_tree import DecisionTreeClass
 
-class DecisionTreeReal(DecisionTree):
+class DecisionTreeClassRealClass(DecisionTreeClass):
 
+    #override print tree function
     def print_tree(self, tree=None, indent=" "):
 
         if not tree:

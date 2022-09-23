@@ -1,13 +1,15 @@
 #imports
 import numpy as np
-from binary_decision_tree import DecisionTree
+from binary_decision_tree import DecisionTreeClass
 
-
+#get bootsrap smaples and labels
 def bootstrap_sample(samples, labels):
-    n_samples = samples.shape[0]
-    idxs = np.random.choice(n_samples, n_samples, replace=True)
-    return samples[idxs], labels[idxs]
+    num_total_samples = samples.shape[0]
+    num_train_samples = int(num_total_samples/10)
+    ids = np.random.choice(num_total_samples, num_train_samples, replace=True)
+    return samples[ids], labels[ids]
 
+#get the most common label(0,1)
 def most_common_label(labels):
     zeros_count = 0
     ones_count = 0
@@ -22,28 +24,39 @@ def most_common_label(labels):
         most_common = 1
     return most_common
 
+#Random Forest class
+class RandomForestClass:
 
-class RandomForest:
-
-    def __init__(self, n_trees=10, min_samples_split=2,
-                 max_depth=100, n_feats=None):
-        self.n_trees = n_trees
+    def __init__(self, num_trees, max_depth, min_samples_split=2):
+        self.num_trees = num_trees
         self.min_samples_split = min_samples_split
         self.max_depth = max_depth
-        self.n_feats = n_feats
         self.trees = []
 
+    #fit
     def fit(self, samples, labels):
         self.trees = []
-        for _ in range(self.n_trees):
-            tree = DecisionTree(min_samples_split=self.min_samples_split,
-                                max_depth=self.max_depth, n_feats=self.n_feats)
+        for _ in range(self.num_trees):
+            tree = DecisionTreeClass(min_samples_split=self.min_samples_split, max_depth=self.max_depth)
             samples_, labels_ = bootstrap_sample(samples, labels)
             tree.fit(samples_, labels_)
             self.trees.append(tree)
 
-    def predict(self, samples):
+    #prediction
+    def predict(self, samples, labels):
         tree_preds = np.array([tree.predict(samples) for tree in self.trees])
+        for tree in range(len(tree_preds)):
+            correct =0
+            wrong =0
+            for pred in range(len(tree_preds[0])):
+                if tree_preds[tree][pred] == labels[pred]:
+                    correct +=1
+                else:
+                    wrong+=1
+            accuracy = correct / (correct+wrong)
+            print(f"DT {tree} : {accuracy}")
+
         tree_preds = np.swapaxes(tree_preds, 0, 1)
         labels_pred = [most_common_label(tree_pred) for tree_pred in tree_preds]
+
         return np.array(labels_pred)

@@ -1,106 +1,112 @@
 import numpy as np
 
-#create Entropy function
-def entropy( labels):
-    hist = np.bincount( labels)
-    ps = hist / len( labels)
+#get Entropy
+def entropy(labels):
+    hist = np.bincount(labels)
+    ps = hist / len(labels)
     return -np.sum([p * np.log2(p) for p in ps if p > 0])
 
-#create Node class
-class Node:
+#Node class
+class NodeClass:
 
-    def __init__(self, feature=None, threshold=None, left=None, right=None, *, value=None):
+    #for decision node
+    def __init__(self, feature=None, threshold=None, left=None, right=None, value=None):
         self.feature = feature
         self.threshold = threshold
         self.left = left
         self.right = right
         self.value = value
 
+    #for leaf node
     def is_leaf_node(self):
         return self.value is not None
 
 
-#create Decision Tree class
-class DecisionTree:
+#Decision Tree class
+class DecisionTreeClass:
 
-    def __init__(self, max_depth, min_samples_split=2, n_feats=None):
+    def __init__(self, max_depth, min_samples_split=2):
         self.min_samples_split = min_samples_split
         self.max_depth = max_depth
-        self.n_feats = n_feats
         self.root = None
 
-    #create fit function
+    #fit
     def fit(self, samples, labels):
-        self.n_feats = samples.shape[1] if not self.n_feats else min(self.n_feats, samples.shape[1])
         self.root = self.build_tree(samples, labels)
 
-    #create predict function
+    #predict
     def predict(self, samples):
-        return np.array([self.traverse_tree(samples, self.root) for samples in samples])
+        return np.array([self.traverse_tree(sample, self.root) for sample in samples])
 
+    #build thr tree
     def build_tree(self, samples, labels, depth=0):
-        n_samples, n_features = samples.shape
-        n_labels = len(np.unique( labels))
+        num_samples, num_features = samples.shape
+        num_labels = len(np.unique(labels))
 
-        # stopping criteria
+        # stopping conditions
         if (depth >= self.max_depth
-                or n_labels == 1
-                or n_samples < self.min_samples_split):
-            leaf_value = self.most_common_label( labels)
-            return Node(value=leaf_value)
+                or num_labels == 1
+                or num_samples < self.min_samples_split):
+            leaf_value = self.most_common_label(labels)
+            return NodeClass(value=leaf_value)
 
-        feat_idxs = np.random.choice(n_features, self.n_feats, replace=False)
+        feature_ids = np.random.choice(num_features, num_features, replace=False)
 
-        # greedily select the best split according to information gain
-        best_feat, best_thresh = self.best_split(samples, labels, feat_idxs)
+        #select the best split based on information gain
+        best_feature, best_threshold= self.best_split(samples, labels, feature_ids)
 
         # grow the children that result from the split
-        left_idxs, right_idxs = self.split(samples[:, best_feat], best_thresh)
-        left = self.build_tree(samples[left_idxs, :], labels[left_idxs], depth + 1)
-        right = self.build_tree(samples[right_idxs, :], labels[right_idxs], depth + 1)
-        return Node(best_feat, best_thresh, left, right)
+        left_ids, right_ids = self.split(samples[:, best_feature], best_threshold)
+        left_tree = self.build_tree(samples[left_ids, :], labels[left_ids], depth + 1)
+        right_tree = self.build_tree(samples[right_ids, :], labels[right_ids], depth + 1)
 
-    def best_split(self, samples, labels, feat_idxs):
-        best_gain = -1
-        split_idx, split_thresh = None, None
-        for feat_idx in feat_idxs:
-            samples_column = samples[:, feat_idx]
-            thresholds = np.unique(samples_column)
+        return NodeClass(best_feature, best_threshold, left_tree, right_tree)
+
+    #get the best split
+    def best_split(self, samples, labels, feat_ids):
+        max_gain = np.NINF
+        split_id, split_threshold= None, None
+        for feat_id in feat_ids:
+            samples_col = samples[:, feat_id]
+            thresholds = np.unique(samples_col)
             for threshold in thresholds:
-                gain = self.information_gain( labels, samples_column, threshold)
+                cur_gain = self.information_gain(labels, samples_col, threshold)
 
-                if gain > best_gain:
-                    best_gain = gain
-                    split_idx = feat_idx
-                    split_thresh = threshold
+                if cur_gain >= max_gain:
+                    max_gain = cur_gain
+                    split_id = feat_id
+                    split_threshold= threshold
 
-        return split_idx, split_thresh
+        return split_id, split_threshold
 
-    def information_gain(self, labels, samples_column, split_thresh):
-        # parent loss
-        parent_entropy = entropy( labels)
+    #get the information gain
+    def information_gain(self, labels, samples_column, split_threshold):
+        # parent's entropy'
+        parent_entropy = entropy(labels)
 
-        # generate split
-        left_idxs, right_idxs = self.split(samples_column, split_thresh)
+        # split
+        left_ids, right_ids = self.split(samples_column, split_threshold)
 
-        if len(left_idxs) == 0 or len(right_idxs) == 0:
+        if len(left_ids) == 0 or len(right_ids) == 0:
             return 0
 
-        # compute the weighted avg. of the loss for the children
-        n = len( labels)
-        n_l, n_r = len(left_idxs), len(right_idxs)
-        e_l, e_r = entropy( labels[left_idxs]), entropy(labels[right_idxs])
-        child_entropy = (n_l / n) * e_l + (n_r / n) * e_r
+        # child's entropy
+        num = len(labels)
+        num_left, num_right = len(left_ids), len(right_ids)
+        entropy_left, entropy_right = entropy(labels[left_ids]), entropy(labels[right_ids])
+        child_entropy = (num_left / num) * entropy_left + (num_right / num) * entropy_right
 
-        # information gain is difference in loss before vs. after split
-        ig = parent_entropy - child_entropy
-        return ig
+        #information gain
+        info_gain = parent_entropy - child_entropy
+        return info_gain
 
-    def split(self, samples_column, split_thresh):
-        left_idxs = np.argwhere(samples_column <= split_thresh).flatten()
-        right_idxs = np.argwhere(samples_column > split_thresh).flatten()
-        return left_idxs, right_idxs
+    #split
+    def split(self, samples_column, split_threshold):
+        left_ids = np.argwhere(samples_column <= split_threshold).flatten()
+        right_ids = np.argwhere(samples_column > split_threshold).flatten()
+        return left_ids, right_ids
 
+    #traverse through the tree
     def traverse_tree(self, samples, node):
         if node.is_leaf_node():
             return node.value
@@ -109,8 +115,7 @@ class DecisionTree:
             return self.traverse_tree(samples, node.left)
         return self.traverse_tree(samples, node.right)
 
-
-
+    #get most common label(0,1)
     def most_common_label(self, labels):
         zeros_count = 0
         ones_count = 0
@@ -125,8 +130,8 @@ class DecisionTree:
             most_common = 1
         return most_common
 
+    #print the tree
     def print_tree(self, tree=None, indent=" "):
-        ''' function to print the tree '''
 
         if not tree:
             tree = self.root
@@ -140,7 +145,3 @@ class DecisionTree:
             self.print_tree(tree.left, indent + indent)
             print("%s(no)  right:" % (indent), end="")
             self.print_tree(tree.right, indent + indent)
-
-def accuracy( labels_true, labels_pred):
-  accuracy = np.sum( labels_true == labels_pred)/len( labels_true)
-  return accuracy

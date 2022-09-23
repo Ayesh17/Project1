@@ -14,7 +14,6 @@ def build_nparray(data):
 	labels = []
 	for i in range(1, len(data)):
 		labels.append(int(data[i][len(data[0]) - 1]))
-		#labels.append(int(data[i][5]))
 	labels_arr = np.array(labels)
 
 	return samples_arr,labels_arr
@@ -36,8 +35,6 @@ def build_list(data):
 def build_dict(data):
 	header = data[0]
 
-
-
 	Dict = {0: {header[0]: [], header[1]: [], header[2]: [], header[3]: [], header[4]: []},
 			1: {header[0]: [], header[1]: [], header[2]: [], header[3]: [], header[4]: []},
 			2: {header[0]: [], header[1]: [], header[2]: [], header[3]: [], header[4]: []},
@@ -49,7 +46,7 @@ def build_dict(data):
 		sub_dict = {header[0]: [], header[1]: [], header[2]: [], header[3]: [], header[4]: []}
 		for j in range(len(data[i])-1):
 			sub_dict[header[j]] = float(data[i][j])
-		Dict.update({i:sub_dict})
+		Dict.update({i-1:sub_dict})
 
 	label_dict = {}
 
