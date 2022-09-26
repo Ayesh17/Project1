@@ -5,7 +5,9 @@ from binary_decision_tree import DecisionTreeClass
 #get bootsrap smaples and labels
 def bootstrap_sample(samples, labels):
     num_total_samples = samples.shape[0]
+    #Get 10% of samples as training dataset
     num_train_samples = int(num_total_samples/10)
+    #randomly select training dataset
     ids = np.random.choice(num_total_samples, num_train_samples, replace=True)
     return samples[ids], labels[ids]
 
@@ -45,6 +47,8 @@ class RandomForestClass:
     #prediction
     def predict(self, samples, labels):
         tree_preds = np.array([tree.predict(samples) for tree in self.trees])
+
+        #get the accuracy of individual trees
         for tree in range(len(tree_preds)):
             correct =0
             wrong =0
@@ -56,7 +60,7 @@ class RandomForestClass:
             accuracy = correct / (correct+wrong)
             print(f"DT {tree} : {accuracy}")
 
+        #get the prediction of the random forest through majority choice
         tree_preds = np.swapaxes(tree_preds, 0, 1)
         labels_pred = [most_common_label(tree_pred) for tree_pred in tree_preds]
-
         return np.array(labels_pred)

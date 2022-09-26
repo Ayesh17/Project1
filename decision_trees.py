@@ -1,8 +1,5 @@
-#!/usr/bin/env python
-# coding: utf-8
-
+#imports
 import numpy as np
-
 from binary_decision_tree import DecisionTreeClass
 from random_forest import RandomForestClass
 from real_value_decision_tree import DecisionTreeClassRealClass
@@ -11,7 +8,9 @@ from real_value_decision_tree import DecisionTreeClassRealClass
 def DT_train_binary(X, Y, max_depth):
     decisionTree = DecisionTreeClass(max_depth)
     decisionTree.fit(X, Y)
+    print()
     decisionTree.print_tree()
+    print()
     return decisionTree
 
 def DT_test_binary(X, Y, DT):
@@ -29,13 +28,17 @@ def DT_test_binary(X, Y, DT):
 
 #X must be a 2D array
 def DT_make_prediction(X, DT):
-    Y_pred = DT.predict(X)
+    list= []
+    list.append(X)
+    Y_pred = DT.predict(list)
     return Y_pred
 
 def DT_train_real(X, Y, max_depth):
     decisionTreeReal = DecisionTreeClassRealClass(max_depth)
     decisionTreeReal.fit(X, Y)
+    print()
     decisionTreeReal.print_tree()
+    print()
     return decisionTreeReal
 
 def DT_test_real(X, Y, DT):

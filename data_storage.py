@@ -1,22 +1,5 @@
-# importing numpy module
+#imports
 import numpy as np
-
-# def build_nparray(data):
-# 	header = np.array(data[0])
-# 	samples = []
-# 	for i in range(1, len(data)):
-# 		sample = []
-# 		for j in range(len(data[i]) - 1):
-# 			sample.append(float(data[i][j]))
-# 		samples.append(sample)
-# 	samples_arr = np.array(samples)
-#
-# 	labels = []
-# 	for i in range(1, len(data)):
-# 		labels.append(int(data[i][len(data[0]) - 1]))
-# 	labels_arr = np.array(labels)
-#
-# 	return samples_arr,labels_arr
 
 def build_nparray(data):
 	header = np.array(data[0])
@@ -25,11 +8,9 @@ def build_nparray(data):
 		for j in range(len(data[i])-1):
 			samples_arr[i-1][j]=data[i][j]
 
-
-	labels = []
-	for i in range(1, len(data)):
-		labels.append(int(data[i][len(data[0]) - 1]))
-	labels_arr = np.array(labels)
+	labels_arr= np.empty(len(data)-1)
+	for i in range(len(labels_arr)):
+		labels_arr[i] = int(data[i+1][len(data[0]) - 1])
 
 	return samples_arr,labels_arr
 

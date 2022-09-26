@@ -1,3 +1,4 @@
+#imports
 import numpy as np
 import decision_trees as dt, data_storage as ds
 
@@ -26,7 +27,7 @@ max_depth = 3
 DT = dt.DT_train_binary(a_samples,a_labels,max_depth)
 test_acc = dt.DT_test_binary(a_samples,a_labels,DT)
 print("DT:",test_acc)
-print(dt.DT_make_prediction([[1,1,1,0,1]],DT))
+# print(dt.DT_make_prediction([0,0,1,0,0],DT))
 
 
 file_name2 = "data_2.csv"

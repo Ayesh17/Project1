@@ -1,10 +1,14 @@
+#imports
 import numpy as np
 
 #get Entropy
 def entropy(labels):
-    hist = np.bincount(labels)
-    ps = hist / len(labels)
-    return -np.sum([p * np.log2(p) for p in ps if p > 0])
+    label_column = labels
+    _, counts = np.unique(label_column, return_counts=True)
+    probabilities = counts / counts.sum()
+    entropy = sum(probabilities * - np.log2(probabilities))
+    return entropy
+
 
 #Node class
 class NodeClass:
@@ -38,12 +42,12 @@ class DecisionTreeClass:
     def predict(self, samples):
         return np.array([self.traverse_tree(sample, self.root) for sample in samples])
 
-    #build thr tree
+    #build the tree
     def build_tree(self, samples, labels, depth=0):
         num_samples, num_features = samples.shape
         num_labels = len(np.unique(labels))
 
-        # stopping conditions
+        # stopping conditions max_depth, num_labels and min_sample_split
         if (depth >= self.max_depth
                 or num_labels == 1
                 or num_samples < self.min_samples_split):
@@ -55,7 +59,7 @@ class DecisionTreeClass:
         #select the best split based on information gain
         best_feature, best_threshold= self.best_split(samples, labels, feature_ids)
 
-        # grow the children that result from the split
+        #get the child trees that result from the split
         left_ids, right_ids = self.split(samples[:, best_feature], best_threshold)
         left_tree = self.build_tree(samples[left_ids, :], labels[left_ids], depth + 1)
         right_tree = self.build_tree(samples[right_ids, :], labels[right_ids], depth + 1)
@@ -63,18 +67,20 @@ class DecisionTreeClass:
         return NodeClass(best_feature, best_threshold, left_tree, right_tree)
 
     #get the best split
-    def best_split(self, samples, labels, feat_ids):
+    def best_split(self, samples, labels, feature_ids):
+        #max_gain initialized to the negative infinity
         max_gain = np.NINF
         split_id, split_threshold= None, None
-        for feat_id in feat_ids:
-            samples_col = samples[:, feat_id]
+        for feature_id in feature_ids:
+            samples_col = samples[:, feature_id]
             thresholds = np.unique(samples_col)
             for threshold in thresholds:
                 cur_gain = self.information_gain(labels, samples_col, threshold)
 
+                #check the information gain
                 if cur_gain >= max_gain:
                     max_gain = cur_gain
-                    split_id = feat_id
+                    split_id = feature_id
                     split_threshold= threshold
 
         return split_id, split_threshold
